@@ -98,7 +98,7 @@ def Check_IPaddress(tokens_words):
 def getASN(host):
     try:
         g = pygeoip.GeoIP('GeoIPASNum.dat')
-        asn=int(g.org_by_name(host).split()[0][2:])
+        asn = int(g.org_by_name(host).split()[0][2:])
         return asn
     except:
         return nf
