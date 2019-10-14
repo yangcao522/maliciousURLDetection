@@ -1,16 +1,12 @@
 #!/usr/bin/python
 # -*- coding:utf8 -*-
-
-from urlparse import urlparse
+from urllib.parse import urlparse
 import re
-import urllib2
 import urllib
 from xml.dom import minidom
 import csv
 import pygeoip
-
-opener = urllib2.build_opener()
-opener.addheaders = [('User-agent', 'Mozilla/5.0')]
+from numpy import unicode
 
 nf = -1
 
@@ -105,91 +101,91 @@ def getASN(host):
 
 
 #
-def web_content_features(url):
-    #这是一个字典（理解成HashMap），存放网页特征的
-    wfeatures = {}
-    total_cnt = 0
-    try:        
-        source_code = str(opener.open(url)) #获取这个URL对应页面的URL源码
-        #print source_code[:500]
-
-        wfeatures['src_html_cnt'] = source_code.count('<html') #多少个html标签
-        wfeatures['src_hlink_cnt'] = source_code.count('<a href=') #多少个超链接
-        wfeatures['src_iframe_cnt'] = source_code.count('<iframe') #
-
-        #suspicioussrc_ javascript functions count -> 这边是看有多少可疑的javascript函数
-        wfeatures['src_eval_cnt'] = source_code.count('eval(')
-        wfeatures['src_escape_cnt'] = source_code.count('escape(')
-        wfeatures['src_link_cnt'] = source_code.count('link(')
-        wfeatures['src_underescape_cnt'] = source_code.count('underescape(')
-        wfeatures['src_exec_cnt'] = source_code.count('exec(')
-        wfeatures['src_search_cnt'] = source_code.count('search(')
-
-        #看看这个URL对应页面中可疑的JavaScript函数有多少个
-        for key in wfeatures:
-            if key != 'src_html_cnt' and key != 'src_hlink_cnt' and key != 'src_iframe_cnt':
-                total_cnt += wfeatures[key]
-        wfeatures['src_total_jfun_cnt'] = total_cnt
-
-    #打不开这个URL，所有的特征对应的值都为1
-    except Exception, e:
-        print "Error" + str(e) + " in downloading page " + url
-        default_val = nf
-        
-        wfeatures['src_html_cnt'] = default_val
-        wfeatures['src_hlink_cnt'] = default_val
-        wfeatures['src_iframe_cnt'] = default_val
-        wfeatures['src_eval_cnt'] = default_val
-        wfeatures['src_escape_cnt'] = default_val
-        wfeatures['src_link_cnt'] = default_val
-        wfeatures['src_underescape_cnt'] = default_val
-        wfeatures['src_exec_cnt'] = default_val
-        wfeatures['src_search_cnt'] = default_val
-        wfeatures['src_total_jfun_cnt'] = default_val
-    
-    return wfeatures
+# def web_content_features(url):
+#     #这是一个字典（理解成HashMap），存放网页特征的
+#     wfeatures = {}
+#     total_cnt = 0
+#     try:
+#         source_code = str(opener.open(url)) #获取这个URL对应页面的URL源码
+#         #print source_code[:500]
+#
+#         wfeatures['src_html_cnt'] = source_code.count('<html') #多少个html标签
+#         wfeatures['src_hlink_cnt'] = source_code.count('<a href=') #多少个超链接
+#         wfeatures['src_iframe_cnt'] = source_code.count('<iframe') #
+#
+#         #suspicioussrc_ javascript functions count -> 这边是看有多少可疑的javascript函数
+#         wfeatures['src_eval_cnt'] = source_code.count('eval(')
+#         wfeatures['src_escape_cnt'] = source_code.count('escape(')
+#         wfeatures['src_link_cnt'] = source_code.count('link(')
+#         wfeatures['src_underescape_cnt'] = source_code.count('underescape(')
+#         wfeatures['src_exec_cnt'] = source_code.count('exec(')
+#         wfeatures['src_search_cnt'] = source_code.count('search(')
+#
+#         #看看这个URL对应页面中可疑的JavaScript函数有多少个
+#         for key in wfeatures:
+#             if key != 'src_html_cnt' and key != 'src_hlink_cnt' and key != 'src_iframe_cnt':
+#                 total_cnt += wfeatures[key]
+#         wfeatures['src_total_jfun_cnt'] = total_cnt
+#
+#     #打不开这个URL，所有的特征对应的值都为1
+#     except Exception as e:
+#         print("Error" + str(e) + " in downloading page " + url)
+#         default_val = nf
+#
+#         wfeatures['src_html_cnt'] = default_val
+#         wfeatures['src_hlink_cnt'] = default_val
+#         wfeatures['src_iframe_cnt'] = default_val
+#         wfeatures['src_eval_cnt'] = default_val
+#         wfeatures['src_escape_cnt'] = default_val
+#         wfeatures['src_link_cnt'] = default_val
+#         wfeatures['src_underescape_cnt'] = default_val
+#         wfeatures['src_exec_cnt'] = default_val
+#         wfeatures['src_search_cnt'] = default_val
+#         wfeatures['src_total_jfun_cnt'] = default_val
+#
+#     return wfeatures
 
 
 # 这是Google的API，已经过时了，需要修改，先注释掉
-def safebrowsing(url):
-    api_key = "ABQIAAAA8C6Tfr7tocAe04vXo5uYqRTEYoRzLFR0-nQ3fRl5qJUqcubbrw"
-    name = "URL_check"
-    ver = "1.0"
-
-    req = {}
-    req["client"] = name
-    req["apikey"] = api_key
-    req["appver"] = ver
-    req["pver"] = "3.0"
-    req["url"] = url #change to check type of url
-
-    try:
-        params = urllib.urlencode(req)
-        req_url = "https://sb-ssl.google.com/safebrowsing/api/lookup?"+params
-        res = urllib2.urlopen(req_url)
-        # print res.code
-        # print res.read()
-        if res.code == 204:
-            # print "safe"
-            return 0
-        elif res.code == 200:
-            # print "The queried URL is either phishing, malware or both, see the response body for the specific type."
-            return 1
-        elif res.code == 204:
-            print "The requested URL is legitimate, no response body returned."
-        elif res.code == 400:
-            print "Bad Request The HTTP request was not correctly formed."
-        elif res.code == 401:
-            print "Not Authorized The apikey is not authorized"
-        else:
-            print "Service Unavailable The server cannot handle the request. Besides the normal server failures, it could also indicate that the client has been throttled by sending too many requests"
-    except:
-        return -1
+# def safebrowsing(url):
+#     api_key = "ABQIAAAA8C6Tfr7tocAe04vXo5uYqRTEYoRzLFR0-nQ3fRl5qJUqcubbrw"
+#     name = "URL_check"
+#     ver = "1.0"
+#
+#     req = {}
+#     req["client"] = name
+#     req["apikey"] = api_key
+#     req["appver"] = ver
+#     req["pver"] = "3.0"
+#     req["url"] = url #change to check type of url
+#
+#     try:
+#         params = urllib.urlencode(req)
+#         req_url = "https://sb-ssl.google.com/safebrowsing/api/lookup?"+params
+#         res = urllib2.urlopen(req_url)
+#         # print res.code
+#         # print res.read()
+#         if res.code == 204:
+#             # print "safe"
+#             return 0
+#         elif res.code == 200:
+#             # print "The queried URL is either phishing, malware or both, see the response body for the specific type."
+#             return 1
+#         elif res.code == 204:
+#             print "The requested URL is legitimate, no response body returned."
+#         elif res.code == 400:
+#             print "Bad Request The HTTP request was not correctly formed."
+#         elif res.code == 401:
+#             print "Not Authorized The apikey is not authorized"
+#         else:
+#             print "Service Unavailable The server cannot handle the request. Besides the normal server failures, it could also indicate that the client has been throttled by sending too many requests"
+#     except:
+#         return -1
 
 
 #这个函数调用了上面的所有函数，组建最后的特征Feature(这也是个字典<特征，值>)
 #这函数最终是在main函数里面调用的
-def feature_extract(url_input):
+def getFeatures(url_input):
 
         Feature = {}
         tokens_words = re.split('\W+', url_input)       #Extract bag of words stings delimited by (.,/,?,,=,-,_)
@@ -225,7 +221,7 @@ def feature_extract(url_input):
         # print getASN(host)
         # Feature['exe_in_url']=exe_in_url(url_input)
         Feature['ASNno'] = getASN(host)
-        Feature['safebrowsing'] = safebrowsing(url_input)
+        #Feature['safebrowsing'] = safebrowsing(url_input)
         """wfeatures=web_content_features(url_input)
         
         for key in wfeatures:

@@ -35,7 +35,7 @@ def svm_classifier(train, query, train_cols):
     query[train_cols] = preprocessing.scale(query[train_cols])
 
     #模型训练，并且打印出模型训练结果，这里全部使用的是默认参数。参数解释：https://blog.csdn.net/szlcw1/article/details/52336824
-    print clf.fit(train[train_cols], train['malicious'])
+    print(clf.fit(train[train_cols], train['malicious']))
 
     # # 获取模型返回值
     # n_Support_vector = clf.n_support_  # 支持向量个数
@@ -51,10 +51,11 @@ def svm_classifier(train, query, train_cols):
     print('Estimated score SVM: %0.5f (+/- %0.5f)' % (scores.mean(), scores.std() / 2))
 
     #对测试集进行预测
+    print(query.keys())
     query['result'] = clf.predict(query[train_cols])
 
     #打印预测结果
-    print query[['URL', 'result']]
+    print(query[['URL', 'result']])
 
 
 # Called from gui
@@ -71,10 +72,10 @@ def svm_classifier(train, query, train_cols):
 
 def forest_classifier(train, query, train_cols):
     #随机森林模型
-    rf = RandomForestClassifier(n_estimators=150)
+    rf = RandomForestClassifier(n_estimators=200)
 
     #模型训练
-    print rf.fit(train[train_cols], train['malicious'])
+    print(rf.fit(train[train_cols], train['malicious']))
 
     #交叉验证
     scores = cross_val_score(rf, train[train_cols], train['malicious'], cv=30)
@@ -85,7 +86,7 @@ def forest_classifier(train, query, train_cols):
     query['result'] = rf.predict(query[train_cols])
 
     #打印预测结果
-    print query[['URL', 'result']]
+    print(query[['URL', 'result']])
 
 
 #main.py中调用
@@ -97,7 +98,6 @@ def train(db, test_db):
     train_csv = pandas.read_csv(db)
     cols_to_keep, train_cols = return_nonstring_col(train_csv.columns)
     train = train_csv[cols_to_keep]
-
     svm_classifier(train_csv, query_csv, train_cols)
 
     #forest_classifier(train_csv, query_csv, train_cols)
